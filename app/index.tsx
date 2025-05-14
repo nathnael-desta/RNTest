@@ -11,6 +11,9 @@ import {
   View,
 } from "react-native";
 
+import * as Speech from 'expo-speech';
+
+
 export default function MriAnalyzer() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -75,7 +78,7 @@ export default function MriAnalyzer() {
 
       const data: AnalysisResult = await response.json();
 
-      console.log(`data:image/png;base64,${data.image}`)
+      Speech.speak(data.speaking);
       setResult({
         speaking: data.speaking,
         image: data.image,
@@ -106,22 +109,20 @@ export default function MriAnalyzer() {
         <View style={styles.resultContainer}>
           <Text style={styles.resultLabel}>Speaking:</Text>
           <Text style={styles.resultValue}>{result.speaking}</Text>
-          {/* <Button
+          <Button
             title="Listen to Audio"
             onPress={() => {
               if (result?.speaking) {
-                const utterance = new SpeechSynthesisUtterance(result.speaking);
-                speechSynthesis.speak(utterance);
+                Speech.speak(result.speaking);
               }
             }}
-          /> */}
+          />
 
           {/* <Image
                 source={{ uri: `data:image/png;base64,${JSON.stringify(result.image)}` }}
                 style={styles.image}
                 resizeMode="contain"
                 /> */}
-
         </View>
       )}
     </ScrollView>
