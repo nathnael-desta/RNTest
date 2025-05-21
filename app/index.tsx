@@ -11,8 +11,9 @@ import {
   View,
 } from "react-native";
 
-import * as Speech from 'expo-speech';
+import * as Speech from "expo-speech";
 
+import makeCall from "@/script/makeCall";
 
 export default function MriAnalyzer() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -20,7 +21,8 @@ export default function MriAnalyzer() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert("Permission denied", "Allow access to media library.");
       return;
@@ -94,7 +96,7 @@ export default function MriAnalyzer() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Button title="Select MRI Image" onPress={pickImage} />
-
+      <Button title="make call" onPress={makeCall} />
       {imageUri && (
         <Image
           source={{ uri: imageUri }}
