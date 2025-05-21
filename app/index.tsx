@@ -1,132 +1,47 @@
-import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Button,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-
-import * as Speech from "expo-speech";
+import React, { useEffect, useRef } from "react";
+import { Button, ScrollView, StyleSheet, Text } from "react-native";
 
 import makeCall from "@/script/makeCall";
 
 export default function MriAnalyzer() {
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const ws = useRef<WebSocket | null>(null);
 
-  const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permission denied", "Allow access to media library.");
-      return;
-    }
+  useEffect(() => {
+    const esp32IP = "192.168.0.123"; // Replace with your ESP32's actual IP
+    ws.current = new WebSocket(`ws://${esp32IP}:80`);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      base64: false,
-      quality: 1,
-    });
+    ws.current.onopen = () => {
+      console.log("Connected to ESP32 WebSocket");
+    };
 
-    if (!result.canceled && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setImageUri(asset.uri);
-      setResult(null);
-      analyzeImage(asset);
-    }
-  };
+    ws.current.onmessage = (e) => {
+      const message = e.data;
+      console.log("Received WebSocket message:", message);
 
-  interface ImageAsset {
-    uri: string;
-    type?: string;
-    name?: string;
-  }
-
-  interface AnalysisResult {
-    speaking: string;
-    image: string | null;
-  }
-
-  const analyzeImage = async (imageAsset: ImageAsset): Promise<void> => {
-    setIsAnalyzing(true);
-    try {
-      const formData = new FormData();
-      const file = {
-        uri: imageAsset.uri,
-        type: "image/jpeg",
-        name: "upload.jpg",
-      } as any;
-
-      formData.append("file", file);
-
-      const response = await fetch("http://192.168.45.171:8000/predict/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Prediction request failed: ${errorText}`);
+      if (message === "send sms and call") {
+        makeCall();
       }
+    };
 
-      const data: AnalysisResult = await response.json();
+    ws.current.onerror = (e) => {
+      console.error("WebSocket error:", e);
+    };
 
-      Speech.speak(data.speaking);
-      setResult({
-        speaking: data.speaking,
-        image: data.image,
-      });
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to analyze image. Try again.");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+    ws.current.onclose = (e) => {
+      console.log("WebSocket closed:", e.code, e.reason);
+    };
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button title="Select MRI Image" onPress={pickImage} />
+      <Text>Listening for emergency triggers from ESP32...</Text>
       <Button title="make call" onPress={makeCall} />
-      {imageUri && (
-        <Image
-          source={{ uri: imageUri }}
-          style={styles.image}
-          resizeMode="contain"
-        />
-      )}
-
-      {isAnalyzing && <ActivityIndicator size="large" color="#0000ff" />}
-
-      {result && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultLabel}>Speaking:</Text>
-          <Text style={styles.resultValue}>{result.speaking}</Text>
-          <Button
-            title="Listen to Audio"
-            onPress={() => {
-              if (result?.speaking) {
-                Speech.speak(result.speaking);
-              }
-            }}
-          />
-
-          {/* <Image
-                source={{ uri: `data:image/png;base64,${JSON.stringify(result.image)}` }}
-                style={styles.image}
-                resizeMode="contain"
-                /> */}
-        </View>
-      )}
     </ScrollView>
   );
 }

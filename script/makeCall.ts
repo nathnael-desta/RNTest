@@ -4,7 +4,7 @@ import { Alert } from "react-native";
 const makeCall = async () => {
   try {
     const response = await fetch(
-      "http://127.0.0.1:8000/emergency",
+      "http://192.168.18.171:8000/emergency",
       {
         method: "POST",
         headers: {
