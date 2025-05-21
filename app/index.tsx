@@ -7,8 +7,8 @@ export default function MriAnalyzer() {
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const esp32IP = "192.168.0.123"; // Replace with your ESP32's actual IP
-    ws.current = new WebSocket(`ws://${esp32IP}:80`);
+    // const esp32IP = "192.168.0.123"; // Replace with your ESP32's actual IP
+    ws.current = new WebSocket(`ws://192.168.13.12`);
 
     ws.current.onopen = () => {
       console.log("Connected to ESP32 WebSocket");
