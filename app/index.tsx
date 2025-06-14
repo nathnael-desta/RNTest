@@ -12,41 +12,41 @@ import {
   View,
 } from "react-native";
 
-const makeCall = async (location: Location.LocationObject | null) => {
-  if (!location) {
-    Alert.alert("Error", "Location not available.");
-    return;
-  }
+// const makeCall = async (location: Location.LocationObject | null) => {
+//   if (!location) {
+//     Alert.alert("Error", "Location not available.");
+//     return;
+//   }
 
-  const { latitude, longitude } = location.coords;
-  const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+//   const { latitude, longitude } = location.coords;
+//   const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
 
-  try {
-    const response = await fetch("http://192.168.13.171:8000/emergency", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        location: locationUrl,
-      }),
-    });
+//   try {
+//     const response = await fetch("http://192.168.13.171:8000/emergency", {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         location: locationUrl,
+//       }),
+//     });
 
-    if (response.ok) {
-      console.log("Twilio call and SMS triggered successfully");
-      Alert.alert("Emergency Triggered", "Twilio alert sent.");
-    } else {
-      console.error("Backend error:", response.status);
-      Alert.alert("Error", "Failed to trigger alert.");
-    }
-  } catch (error) {
-    console.error("Network error:", error);
-    Alert.alert("Error", "Could not contact backend.");
-  }
-};
+//     if (response.ok) {
+//       console.log("Twilio call and SMS triggered successfully");
+//       Alert.alert("Emergency Triggered", "Twilio alert sent.");
+//     } else {
+//       console.error("Backend error:", response.status);
+//       Alert.alert("Error", "Failed to trigger alert.");
+//     }
+//   } catch (error) {
+//     console.error("Network error:", error);
+//     Alert.alert("Error", "Could not contact backend.");
+//   }
+// };
 
 export default function MriAnalyzer() {
-  const esp32Socket = useRef<WebSocket | null>(null);
+  // const esp32Socket = useRef<WebSocket | null>(null);
   const predictSocket = useRef<WebSocket | null>(null);
 
   const [location, setLocation] = useState<Location.LocationObject | null>(
@@ -87,36 +87,36 @@ export default function MriAnalyzer() {
     };
   }, []);
 
-  useEffect(() => {
-    esp32Socket.current = new WebSocket(`ws://192.168.13.12`);
+  // useEffect(() => {
+  //   esp32Socket.current = new WebSocket(`ws://192.168.13.12`);
 
-    esp32Socket.current.onopen = () => {
-      console.log("Connected to ESP32 WebSocket");
-    };
+  //   esp32Socket.current.onopen = () => {
+  //     console.log("Connected to ESP32 WebSocket");
+  //   };
 
-    esp32Socket.current.onmessage = (e) => {
-      const message = e.data;
-      console.log("Received WebSocket message:", message);
+  //   esp32Socket.current.onmessage = (e) => {
+  //     const message = e.data;
+  //     console.log("Received WebSocket message:", message);
 
-      if (message === "send sms and call") {
-        makeCall(location);
-      }
-    };
+  //     if (message === "send sms and call") {
+  //       makeCall(location);
+  //     }
+  //   };
 
-    esp32Socket.current.onerror = (e) => {
-      console.error("WebSocket error:", e);
-    };
+  //   esp32Socket.current.onerror = (e) => {
+  //     console.error("WebSocket error:", e);
+  //   };
 
-    esp32Socket.current.onclose = (e) => {
-      console.log("WebSocket closed:", e.code, e.reason);
-    };
+  //   esp32Socket.current.onclose = (e) => {
+  //     console.log("WebSocket closed:", e.code, e.reason);
+  //   };
 
-    return () => {
-      if (esp32Socket.current) {
-        esp32Socket.current.close();
-      }
-    };
-  }, []);
+  //   return () => {
+  //     if (esp32Socket.current) {
+  //       esp32Socket.current.close();
+  //     }
+  //   };
+  // }, []);
 
   const openMap = () => {
     if (location) {
@@ -127,7 +127,7 @@ export default function MriAnalyzer() {
   };
 
   useEffect(() => {
-    const socketUrl = "ws://192.168.13.171:8000/ws/predict";
+    const socketUrl = "ws://192.168.16.47:8000/ws/predict";
 
     predictSocket.current = new WebSocket(socketUrl);
 
@@ -138,9 +138,7 @@ export default function MriAnalyzer() {
     predictSocket.current.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        const message = `${data.speaking}${
-          data.object ? ` ${data.object}` : ""
-        }`.trim();
+        const message = `${data.speaking} ? ${data.speaking} : ""`.trim();
 
         console.log("Received prediction:", message);
         setCurrentMessage(message);
@@ -170,17 +168,19 @@ export default function MriAnalyzer() {
 
     if (currentMessage !== lastSpokenMessage) {
       Speech.stop();
-      Speech.speak(currentMessage);
+      Speech.speak(currentMessage, {
+        rate: 1.5,
+      });
       setLastSpokenMessage(currentMessage);
     }
   }, [currentMessage]);
 
   // Optional: allow "Path is clear" to be re-spoken after a timeout
   useEffect(() => {
-    if (currentMessage === "Path is clear") {
+    if (currentMessage === "clear!") {
       const timeout = setTimeout(() => {
         setLastSpokenMessage("");
-      }, 10000); // reset after 10 seconds
+      }, 10000); // reset after 10 secondsr
       return () => clearTimeout(timeout);
     }
   }, [currentMessage]);
@@ -188,7 +188,7 @@ export default function MriAnalyzer() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text>Listening for emergency triggers from ESP32...</Text>
-      <Button title="make call" onPress={() => makeCall(location)} />
+      {/* <Button title="make call" onPress={() => makeCall(location)} /> */}
 
       <View style={styles.locationSection}>
         <Text style={styles.header}>Location Info:</Text>
